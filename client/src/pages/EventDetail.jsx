@@ -16,6 +16,16 @@ const EventDetail = () => {
     const [error, setError] = useState('');
     const [successMsg, setSuccessMsg] = useState('');
 
+    const loadRazorpay = () => {
+        return new Promise((resolve) => {
+            const script = document.createElement('script');
+            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            script.onload = () => resolve(true);
+            script.onerror = () => resolve(false);
+            document.body.appendChild(script);
+        });
+    };
+
     useEffect(() => {
         const fetchEvent = async () => {
             try {
@@ -45,14 +55,79 @@ const EventDetail = () => {
                 setShowOTP(true);
                 setSuccessMsg('OTP sent to your email. Please verify to confirm booking.');
             } else {
-                await api.post('/bookings', { eventId: event._id, otp });
-                setSuccessMsg('Booking requested! Awaiting admin confirmation.');
-                setShowOTP(false);
-                // Update local seats count dynamically after booking
-                setEvent({ ...event, availableSeats: event.availableSeats - 1 });
+                const { data } = await api.post('/bookings', { eventId: event._id, otp });
+                
+                if (event.ticketPrice > 0) {
+                    await handlePayment(data.booking);
+                } else {
+                    setSuccessMsg('Booking requested! Awaiting admin confirmation.');
+                    setShowOTP(false);
+                    // Update local seats count dynamically after booking
+                    setEvent({ ...event, availableSeats: event.availableSeats - 1 });
+                }
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Booking failed');
+        } finally {
+            setBookingLoading(false);
+        }
+    };
+
+    const handlePayment = async (booking) => {
+        setBookingLoading(true);
+        const res = await loadRazorpay();
+        if (!res) {
+            setError('Razorpay SDK failed to load. Are you online?');
+            setBookingLoading(false);
+            return;
+        }
+
+        try {
+            // Get Key ID
+            const { data: config } = await api.get('/payments/config');
+            // Create Order
+            const { data: orderData } = await api.post('/payments/create-order', { bookingId: booking._id });
+
+            const options = {
+                key: config.key, // Your razorpay key id
+                amount: orderData.amount,
+                currency: orderData.currency,
+                name: 'Eventora',
+                description: `Payment for ${event.title}`,
+                order_id: orderData.orderId,
+                handler: async function (response) {
+                    try {
+                        await api.post('/payments/verify-payment', {
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_signature: response.razorpay_signature,
+                            bookingId: booking._id
+                        });
+                        navigate('/payment-success');
+                    } catch (verifyErr) {
+                        alert('Payment Verification Failed!');
+                        navigate('/payment-failed');
+                    }
+                },
+                prefill: {
+                    name: user.name,
+                    email: user.email,
+                },
+                theme: {
+                    color: '#000000'
+                }
+            };
+
+            const paymentObject = new window.Razorpay(options);
+            paymentObject.on('payment.failed', function (response){
+                alert(response.error.description);
+                navigate('/payment-failed');
+            });
+            paymentObject.open();
+
+        } catch (error) {
+            setError('Could not initialize payment');
+            console.error(error);
         } finally {
             setBookingLoading(false);
         }

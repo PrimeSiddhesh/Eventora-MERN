@@ -9,6 +9,7 @@ const AdminDashboard = () => {
     const [events, setEvents] = useState([]);
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isGenerating, setIsGenerating] = useState(false);
 
     const [showEventForm, setShowEventForm] = useState(false);
     const [formData, setFormData] = useState({
@@ -35,6 +36,25 @@ const AdminDashboard = () => {
             console.error('Error fetching admin data', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleGenerateDescription = async () => {
+        if (!formData.title) {
+            alert('Please enter a title first to generate a description.');
+            return;
+        }
+        setIsGenerating(true);
+        try {
+            const res = await api.post('/ai/generate-description', {
+                title: formData.title,
+                category: formData.category
+            });
+            setFormData({ ...formData, description: res.data.description });
+        } catch (error) {
+            alert('Failed to generate description.');
+        } finally {
+            setIsGenerating(false);
         }
     };
 
@@ -137,7 +157,12 @@ const AdminDashboard = () => {
                         <div className="md:col-span-2">
                             <input type="text" placeholder="Image URL (Provide any direct link to an image)" className="w-full border px-4 py-3 rounded-lg focus:ring-2 focus:ring-gray-700 outline-none transition" value={formData.image} onChange={e => setFormData({ ...formData, image: e.target.value })} />
                         </div>
-
+                        
+                        <div className="md:col-span-2 flex justify-end">
+                            <button type="button" onClick={handleGenerateDescription} disabled={isGenerating} className="text-sm bg-indigo-100 text-indigo-700 font-bold py-2 px-4 rounded-lg hover:bg-indigo-200 transition">
+                                {isGenerating ? 'Generating...' : '✨ Generate Description with AI'}
+                            </button>
+                        </div>
                         <textarea required placeholder="Event Description" className="border px-4 py-3 rounded-lg md:col-span-2 h-32 focus:ring-2 focus:ring-gray-700 outline-none transition" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
                         <button type="submit" className="md:col-span-2 bg-gray-900 text-white font-bold py-3 mt-2 rounded-lg hover:bg-black transition shadow-md">Publish Event</button>
                     </form>
