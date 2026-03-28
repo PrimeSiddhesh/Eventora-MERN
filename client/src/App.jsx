@@ -9,13 +9,15 @@ import UserDashboard from './pages/UserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentFailed from './pages/PaymentFailed';
+import ContactUs from './pages/ContactUs';
+import Footer from './components/Footer';
 
 function App() {
     return (
         <Router>
-            <div className="min-h-screen bg-gray-50 flex flex-col">
+            <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
                 <Navbar />
-                <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
                     <Routes>
                         <Route path="/" element={<Home />} />
                         <Route path="/events/:id" element={<EventDetail />} />
@@ -25,9 +27,11 @@ function App() {
                         <Route path="/admin" element={<AdminDashboard />} />
                         <Route path="/payment-success" element={<PaymentSuccess />} />
                         <Route path="/payment-failed" element={<PaymentFailed />} />
+                        <Route path="/contact" element={<ContactUs />} />
                         <Route path="*" element={<h1 className="text-3xl font-bold text-center mt-20">404 - Page Not Found</h1>} />
                     </Routes>
                 </main>
+                <Footer />
             </div>
         </Router>
     );

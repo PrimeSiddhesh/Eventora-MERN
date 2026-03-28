@@ -15,6 +15,10 @@ Eventora is a full-stack event management platform built using the MERN stack. I
 - **AI Event Description Generator**: Let Google Gemini automatically write professional, compelling descriptions for your events in one click from the Admin Dashboard.
 - **AI Event Chatbot & Recommender**: A responsive floating assistant on the homepage that has direct access to upcoming events. Users can ask questions like "What events are happening this week?" or "Recommend me tech events," and receive smart, context-aware answers.
 
+### 💳 Payment Gateway (New!)
+- **Razorpay Test Mode Integration**: Full checkout experience injected natively via Razorpay's Modal UI.
+- **Cryptographic Verification**: Enterprise-grade backend verification utilizing Node's `crypto` module to validate HMAC SHA-256 signatures, ensuring mathematically proven transactions before booking tickets.
+
 ---
 
 ## 📦 Tech Stack

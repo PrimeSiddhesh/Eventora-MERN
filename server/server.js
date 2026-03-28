@@ -10,6 +10,7 @@ const eventRoutes = require('./routes/events');
 const bookingRoutes = require('./routes/bookings');
 const aiRoutes = require('./ai/aiRoutes');
 const paymentRoutes = require('./routes/payments');
+const uploadRoutes = require('./routes/upload');
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use('/api/events', eventRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Database Connection
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/eventora')

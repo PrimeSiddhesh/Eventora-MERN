@@ -10,6 +10,7 @@ const AdminDashboard = () => {
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
 
     const [showEventForm, setShowEventForm] = useState(false);
     const [formData, setFormData] = useState({
@@ -55,6 +56,25 @@ const AdminDashboard = () => {
             alert('Failed to generate description.');
         } finally {
             setIsGenerating(false);
+        }
+    };
+
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setIsUploading(true);
+        const uploadData = new FormData();
+        uploadData.append('image', file);
+        try {
+            const res = await api.post('/upload', uploadData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            setFormData({ ...formData, image: res.data.imageUrl });
+        } catch (error) {
+            console.error(error);
+            alert('Image upload failed. Ensure you selected a valid image and the backend is running.');
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -155,7 +175,30 @@ const AdminDashboard = () => {
                         <input required type="number" placeholder="Ticket Price (0 for free)" className="border px-4 py-3 rounded-lg focus:ring-2 focus:ring-gray-700 outline-none transition" value={formData.ticketPrice} onChange={e => setFormData({ ...formData, ticketPrice: e.target.value })} />
 
                         <div className="md:col-span-2">
-                            <input type="text" placeholder="Image URL (Provide any direct link to an image)" className="w-full border px-4 py-3 rounded-lg focus:ring-2 focus:ring-gray-700 outline-none transition" value={formData.image} onChange={e => setFormData({ ...formData, image: e.target.value })} />
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">Event Image</label>
+                            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition relative overflow-hidden">
+                                {formData.image ? (
+                                    <div className="absolute inset-0 w-full h-full">
+                                        <img src={formData.image} alt="Preview" className="w-full h-full object-cover opacity-60" />
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-white font-bold opacity-0 hover:opacity-100 transition">
+                                            Click to Change Image
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center pt-5 pb-6 text-gray-500">
+                                        {isUploading ? (<span>Uploading directly to Cloudinary... ☁️</span>) : (
+                                            <>
+                                                <svg className="w-8 h-8 mb-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                                                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                                                </svg>
+                                                <p className="mb-2 text-sm"><span className="font-semibold">Click to upload</span> or drag and drop</p>
+                                                <p className="text-xs">PNG, JPG or WEBP (Standard Cloudinary formatting)</p>
+                                            </>
+                                        )}
+                                    </div>
+                                )}
+                                <input id="dropzone-file" type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={isUploading} />
+                            </label>
                         </div>
                         
                         <div className="md:col-span-2 flex justify-end">
