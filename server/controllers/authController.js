@@ -28,7 +28,6 @@ exports.register = async (req, res) => {
         });
 
         const otp = generateOTP();
-        console.log("Generated OTP:", otp);
         await OTP.create({ email, otp, action: 'account_verification' });
         await sendOTPEmail(email, otp, 'account_verification');
 
@@ -69,29 +68,18 @@ exports.login = async (req, res) => {
         res.status(500).json({ message: 'Server Error', error: error.message });
     }
 };
+
 exports.verifyOTP = async (req, res) => {
     try {
         const { email, otp } = req.body;
-
-        console.log("Verify request:", email, otp);
-
-        const validOTP = await OTP.findOne({
-            email,
-            otp,
-            action: 'account_verification'
-        });
+        const validOTP = await OTP.findOne({ email, otp, action: 'account_verification' });
 
         if (!validOTP) {
             return res.status(400).json({ message: 'Invalid or expired OTP' });
         }
 
-        const user = await User.findOneAndUpdate(
-            { email },
-            { isVerified: true },
-            { returnDocument: "after" }   // updated option
-        );
-
-        await OTP.deleteOne({ _id: validOTP._id });
+        const user = await User.findOneAndUpdate({ email }, { isVerified: true }, { new: true });
+        await OTP.deleteOne({ _id: validOTP._id }); // Delete OTP after usage
 
         res.json({
             _id: user.id,
@@ -100,9 +88,7 @@ exports.verifyOTP = async (req, res) => {
             role: user.role,
             token: generateToken(user.id, user.role)
         });
-
     } catch (error) {
-        console.error("VERIFY OTP ERROR:", error);  // show real error in terminal
-        res.status(500).json({ message: 'Server Error', error: error.message });
+        res.status(500).json({ message: 'Server Error' });
     }
 };
