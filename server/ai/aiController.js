@@ -23,13 +23,13 @@ exports.generateDescription = async (req, res) => {
 
         // Initialize fresh instance to ensure env var is picked up
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
         const prompt = `Act as an expert event planner and copywriter. Generate an engaging, professional, and convincing event description for an upcoming event titled: "${title}". 
         ${category ? `The category of the event is "${category}".` : ''}
         Keep it concise, between 3 to 5 sentences. Emphasize why someone would want to attend. Output only the description text.`;
 
-        console.log('Sending prompt to Gemini...');
+        console.log('Sending prompt to Gemini (Model: gemini-1.5-flash)...');
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const generatedText = response.text();
@@ -61,7 +61,7 @@ exports.handleChat = async (req, res) => {
         if (!apiKey) return res.status(500).json({ message: 'Chat service not configured.' });
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
         // Retrieve upcoming events to provide as context
         const upcomingEvents = await Event.find({ date: { $gte: new Date() } })
