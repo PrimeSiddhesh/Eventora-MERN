@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import { FaTicketAlt } from 'react-icons/fa';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -58,22 +59,6 @@ const Login = () => {
             } else {
                 setError(err.message || err);
             }
-        try {
-            if (useOTP && !showOTPField) {
-                await requestLoginOTP(email);
-                setShowOTPField(true);
-            } else {
-                let data;
-                if (useOTP) {
-                    data = await loginWithOTP(email, otp);
-                } else {
-                    data = await login(email, password);
-                }
-                if (data.role === 'admin') navigate('/admin');
-                else navigate('/dashboard');
-            }
-        } catch (err) {
-            setError(err.message || err);
         } finally {
             setLoading(false);
         }
@@ -90,9 +75,10 @@ const Login = () => {
             </div>
 
             {error && <div className="bg-red-50 text-red-600 p-4 rounded-2xl mb-8 text-center text-sm font-bold shadow-sm border border-red-100">{error}</div>}
+            {message && <div className="bg-green-50 text-green-600 p-4 rounded-2xl mb-8 text-center text-sm font-bold shadow-sm border border-green-100">{message}</div>}
 
             <form onSubmit={handleSubmit} className="space-y-6">
-                {!useOTP ? (
+                {!isOTPLogin ? (
                     <>
                         <div>
                             <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Email Address</label>
@@ -104,16 +90,32 @@ const Login = () => {
                                 onChange={(e) => setEmail(e.target.value)}
                             />
                         </div>
-                        <div>
-                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Password</label>
-                            <input
-                                type="password"
-                                required
-                                className="w-full px-6 py-4 rounded-2xl border border-gray-100 focus:border-gray-900 focus:ring-0 transition-all bg-gray-50/50 font-bold text-gray-900"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                            />
-                        </div>
+                        {!showOTP && (
+                            <div>
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Password</label>
+                                <input
+                                    type="password"
+                                    required
+                                    className="w-full px-6 py-4 rounded-2xl border border-gray-100 focus:border-gray-900 focus:ring-0 transition-all bg-gray-50/50 font-bold text-gray-900"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                />
+                            </div>
+                        )}
+                        {showOTP && (
+                            <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 text-center">Verification Code</label>
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder="000000"
+                                    className="w-full px-6 py-5 rounded-2xl border border-gray-100 focus:border-gray-900 focus:ring-0 transition-all bg-gray-50/50 font-black tracking-[0.5em] text-center text-2xl shadow-inner"
+                                    value={otp}
+                                    onChange={(e) => setOtp(e.target.value)}
+                                    maxLength="6"
+                                />
+                            </div>
+                        )}
                     </>
                 ) : (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -125,10 +127,10 @@ const Login = () => {
                                 className="w-full px-6 py-4 rounded-2xl border border-gray-100 focus:border-gray-900 focus:ring-0 transition-all bg-gray-50/50 font-bold text-gray-900"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                disabled={showOTPField}
+                                disabled={showOTP}
                             />
                         </div>
-                        {showOTPField && (
+                        {showOTP && (
                             <div className="mt-6">
                                 <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 text-center">Verification Code</label>
                                 <input
@@ -141,22 +143,7 @@ const Login = () => {
                                     maxLength="6"
                                 />
                             </div>
-                                You will receive a code on your email to sign in.
-                            </div>
                         )}
-                    </>
-                ) : (
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Verification Code (OTP)</label>
-                        <input
-                            type="text"
-                            required
-                            placeholder="6-digit code"
-                            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-gray-700 transition shadow-sm font-bold tracking-widest text-center text-lg"
-                            value={otp}
-                            onChange={(e) => setOtp(e.target.value)}
-                            maxLength="6"
-                        />
                     </div>
                 )}
 
@@ -165,22 +152,22 @@ const Login = () => {
                         type="button"
                         onClick={handleSendOTP}
                         disabled={loading}
-                        className="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition shadow-md"
+                        className="w-full bg-gray-900 text-white font-black py-5 rounded-2xl hover:bg-black transition shadow-xl shadow-gray-900/20 transform active:scale-95 uppercase tracking-widest text-[10px]"
                     >
                         {loading ? 'Sending...' : 'Get Login OTP'}
                     </button>
                 ) : (
                     <button
                         type="submit"
-                        disabled={loading}
-                        className="w-full bg-gray-900 text-white font-bold py-3 rounded-lg hover:bg-black transition shadow-md"
+                        disabled={loading || (showOTP && !otp)}
+                        className="w-full bg-gray-900 text-white font-black py-5 rounded-2xl hover:bg-black transition shadow-xl shadow-gray-900/20 transform active:scale-95 uppercase tracking-widest text-[10px]"
                     >
                         {loading ? 'Processing...' : (showOTP ? 'Verify & Sign In' : 'Sign In')}
                     </button>
                 )}
             </form>
 
-            <div className="mt-6 text-center">
+            <div className="mt-8 text-center">
                 <button 
                     type="button"
                     onClick={() => {
@@ -189,14 +176,14 @@ const Login = () => {
                         setError('');
                         setMessage('');
                     }}
-                    className="text-sm text-indigo-600 font-semibold hover:underline"
+                    className="text-[10px] text-gray-400 font-black uppercase tracking-widest hover:text-black transition"
                 >
-                    {isOTPLogin ? 'Sign in with Password instead' : 'Log in using OTP instead'}
+                    {isOTPLogin ? 'Use Password instead' : 'Log in using OTP instead'}
                 </button>
             </div>
 
-            <p className="text-center mt-8 text-gray-600">
-                Don't have an account? <Link to="/register" className="text-gray-900 font-bold hover:underline">Sign up</Link>
+            <p className="text-center mt-10 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                Don't have an account? <Link to="/register" className="text-gray-900 font-black hover:underline">Sign up</Link>
             </p>
         </div>
     );
