@@ -55,7 +55,8 @@ const AdminDashboard = () => {
             setFormData({ ...formData, description: res.data.description });
         } catch (error) {
             console.error('AI Generation Error:', error);
-            alert(`AI Error: ${error.response?.data?.message || 'Failed to generate description. Check if GEMINI_API_KEY is set on Render.'}`);
+            const detail = error.response?.data?.error || '';
+            alert(`AI Error: ${error.response?.data?.message || 'Failed to generate description.'} ${detail ? `(${detail})` : ''}`);
         } finally {
             setIsGenerating(false);
         }
