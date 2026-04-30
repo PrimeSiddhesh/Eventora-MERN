@@ -12,28 +12,41 @@ exports.generateDescription = async (req, res) => {
     try {
         console.log('--- AI Description Generation Started ---');
         const { title, category } = req.body;
+        
         if (!title) return res.status(400).json({ message: 'Event title is required for generation.' });
 
-        console.log('Prompting for:', title, category);
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            console.error('❌ CRITICAL: GEMINI_API_KEY is missing in process.env');
+            return res.status(500).json({ message: 'AI API Key not configured on server.' });
+        }
+
+        // Initialize fresh instance to ensure env var is picked up
+        const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         const prompt = `Act as an expert event planner and copywriter. Generate an engaging, professional, and convincing event description for an upcoming event titled: "${title}". 
         ${category ? `The category of the event is "${category}".` : ''}
         Keep it concise, between 3 to 5 sentences. Emphasize why someone would want to attend. Output only the description text.`;
 
+        console.log('Sending prompt to Gemini...');
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const generatedText = response.text();
 
-        console.log('AI Response Success');
+        if (!generatedText) {
+            throw new Error('Gemini returned an empty response.');
+        }
+
+        console.log('✅ AI Response Success');
         res.status(200).json({ description: generatedText });
 
     } catch (error) {
-        console.error('❌ Error in generated description:', error);
+        console.error('❌ AI GENERATION FAILED:', error);
         res.status(500).json({ 
             message: 'Failed to generate description via AI.', 
             error: error.message,
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            tip: 'Check if your GEMINI_API_KEY is valid and has billing enabled (if required).'
         });
     }
 };
@@ -44,6 +57,10 @@ exports.handleChat = async (req, res) => {
         const { message } = req.body;
         if (!message) return res.status(400).json({ message: 'Message is required.' });
 
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) return res.status(500).json({ message: 'Chat service not configured.' });
+
+        const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         // Retrieve upcoming events to provide as context
