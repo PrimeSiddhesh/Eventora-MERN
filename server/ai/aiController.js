@@ -1,8 +1,8 @@
-const { GoogleGenAI } = require('@google/genai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const Event = require('../models/Event');
 
 // Initialize Gemini Client
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Generate Event Description
 exports.generateDescription = async (req, res) => {
@@ -10,16 +10,16 @@ exports.generateDescription = async (req, res) => {
         const { title, category } = req.body;
         if (!title) return res.status(400).json({ message: 'Event title is required for generation.' });
 
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
         const prompt = `Act as an expert event planner and copywriter. Generate an engaging, professional, and convincing event description for an upcoming event titled: "${title}". 
         ${category ? `The category of the event is "${category}".` : ''}
         Keep it concise, between 3 to 5 sentences. Emphasize why someone would want to attend. Output only the description text.`;
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-1.5-flash',
-            contents: prompt
-        });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const generatedText = response.text();
 
-        const generatedText = response.text;
         res.status(200).json({ description: generatedText });
 
     } catch (error) {
@@ -33,6 +33,8 @@ exports.handleChat = async (req, res) => {
     try {
         const { message } = req.body;
         if (!message) return res.status(400).json({ message: 'Message is required.' });
+
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         // Retrieve upcoming events to provide as context
         const upcomingEvents = await Event.find({ date: { $gte: new Date() } })
@@ -59,12 +61,11 @@ exports.handleChat = async (req, res) => {
 
         const prompt = `${systemInstruction}\n\nUser Question: ${message}\nAssistant Answer:`;
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-1.5-flash',
-            contents: prompt
-        });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
 
-        res.status(200).json({ reply: response.text });
+        res.status(200).json({ reply: text });
 
     } catch (error) {
         console.error('Error in AI Chatbot:', error);
