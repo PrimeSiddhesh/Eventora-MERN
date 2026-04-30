@@ -69,6 +69,14 @@ exports.confirmBooking = async (req, res) => {
         if (paymentStatus) {
             booking.paymentStatus = paymentStatus;
         }
+
+        // Generate Seat Number: Row A-Z, Seat 1-20 per row
+        const seatIndex = event.totalSeats - event.availableSeats + 1;
+        const rowIndex = Math.floor((seatIndex - 1) / 20);
+        const rowLetter = String.fromCharCode(65 + (rowIndex % 26)); // A-Z
+        const seatNum = ((seatIndex - 1) % 20) + 1;
+        booking.seatNumber = `${rowLetter}${seatNum}`;
+
         await booking.save();
 
         event.availableSeats -= 1;

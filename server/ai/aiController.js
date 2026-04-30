@@ -2,14 +2,19 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const Event = require('../models/Event');
 
 // Initialize Gemini Client
+if (!process.env.GEMINI_API_KEY) {
+    console.warn('⚠️ GEMINI_API_KEY is missing in environment variables!');
+}
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Generate Event Description
 exports.generateDescription = async (req, res) => {
     try {
+        console.log('--- AI Description Generation Started ---');
         const { title, category } = req.body;
         if (!title) return res.status(400).json({ message: 'Event title is required for generation.' });
 
+        console.log('Prompting for:', title, category);
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         const prompt = `Act as an expert event planner and copywriter. Generate an engaging, professional, and convincing event description for an upcoming event titled: "${title}". 
@@ -20,11 +25,16 @@ exports.generateDescription = async (req, res) => {
         const response = await result.response;
         const generatedText = response.text();
 
+        console.log('AI Response Success');
         res.status(200).json({ description: generatedText });
 
     } catch (error) {
-        console.error('Error in generated description:', error);
-        res.status(500).json({ message: 'Failed to generate description via AI.', error: error.message });
+        console.error('❌ Error in generated description:', error);
+        res.status(500).json({ 
+            message: 'Failed to generate description via AI.', 
+            error: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 };
 

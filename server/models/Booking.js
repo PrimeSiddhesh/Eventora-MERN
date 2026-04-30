@@ -7,6 +7,7 @@ const bookingSchema = new mongoose.Schema({
     paymentStatus: { type: String, enum: ['paid', 'not_paid'], default: 'not_paid' },
     amount: { type: Number, required: true },
     checkedIn: { type: Boolean, default: false },
+    seatNumber: { type: String },
     bookedAt: { type: Date, default: Date.now }
 }, { timestamps: true });
 

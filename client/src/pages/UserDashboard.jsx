@@ -49,8 +49,18 @@ const TicketModal = ({ booking, onClose }) => {
                         </div>
                     </div>
                     
-                    <div className="text-[9px] font-black text-gray-300 uppercase tracking-[0.3em] mb-2">Booking ID</div>
-                    <div className="text-xs font-mono font-bold text-gray-400 bg-gray-50 px-4 py-2 rounded-full mb-4">{booking._id}</div>
+                    <div className="flex justify-between items-end gap-4 mb-4">
+                        <div className="flex-grow text-left">
+                            <div className="text-[9px] font-black text-gray-300 uppercase tracking-[0.3em] mb-2">Booking ID</div>
+                            <div className="text-[10px] font-mono font-bold text-gray-400 bg-gray-50 px-4 py-2 rounded-full truncate">{booking._id}</div>
+                        </div>
+                        {booking.seatNumber && (
+                            <div className="text-right shrink-0">
+                                <div className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-1">Seat</div>
+                                <div className="text-2xl font-black text-blue-600 italic tracking-tighter leading-none">{booking.seatNumber}</div>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div className="p-6 bg-gray-50 flex gap-4">
