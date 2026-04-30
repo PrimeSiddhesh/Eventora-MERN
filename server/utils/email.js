@@ -1,25 +1,25 @@
-const Brevo = require('@getbrevo/brevo');
+const axios = require('axios');
 const dotenv = require('dotenv');
 
 dotenv.config();
 
-const apiInstance = new Brevo.TransactionalEmailsApi();
-const apiKey = apiInstance.authentications['apiKey'];
-apiKey.apiKey = process.env.BREVO_API_KEY;
-
 const sendEmail = async (to, subject, htmlContent) => {
-    const sendSmtpEmail = new Brevo.SendSmtpEmail();
-    sendSmtpEmail.subject = subject;
-    sendSmtpEmail.htmlContent = htmlContent;
-    sendSmtpEmail.sender = { name: "Eventora", email: process.env.EMAIL_USER };
-    sendSmtpEmail.to = [{ email: to }];
-
     try {
-        const data = await apiInstance.sendTransacEmail(sendSmtpEmail);
-        console.log('Email sent successfully via Brevo. Message ID:', data.messageId);
-        return data;
+        const response = await axios.post('https://api.brevo.com/v3/smtp/email', {
+            sender: { name: "Eventora", email: process.env.EMAIL_USER },
+            to: [{ email: to }],
+            subject: subject,
+            htmlContent: htmlContent
+        }, {
+            headers: {
+                'api-key': process.env.BREVO_API_KEY,
+                'Content-Type': 'application/json'
+            }
+        });
+        console.log('Email sent successfully via Brevo REST API. Message ID:', response.data.messageId);
+        return response.data;
     } catch (error) {
-        console.error('Error sending email via Brevo:', error.response ? error.response.body : error.message);
+        console.error('Error sending email via Brevo API:', error.response ? error.response.data : error.message);
         throw error;
     }
 };
