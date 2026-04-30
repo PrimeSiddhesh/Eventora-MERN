@@ -58,47 +58,89 @@ const Login = () => {
             } else {
                 setError(err.message || err);
             }
+        try {
+            if (useOTP && !showOTPField) {
+                await requestLoginOTP(email);
+                setShowOTPField(true);
+            } else {
+                let data;
+                if (useOTP) {
+                    data = await loginWithOTP(email, otp);
+                } else {
+                    data = await login(email, password);
+                }
+                if (data.role === 'admin') navigate('/admin');
+                else navigate('/dashboard');
+            }
+        } catch (err) {
+            setError(err.message || err);
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="max-w-md mx-auto mt-20 bg-white p-8 rounded-xl shadow-lg border border-gray-100">
-            <div className="text-center mb-8">
-                <h2 className="text-3xl font-extrabold text-gray-900 mb-2">Welcome Back</h2>
-                <p className="text-gray-500">Sign in to your Eventora account</p>
+        <div className="max-w-md mx-auto mt-16 bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 transition-all duration-500 hover:shadow-2xl">
+            <div className="text-center mb-10">
+                <div className="w-16 h-16 bg-gray-900 text-white rounded-2xl flex items-center justify-center text-3xl mx-auto mb-6 shadow-xl">
+                    <FaTicketAlt />
+                </div>
+                <h2 className="text-4xl font-black text-gray-900 mb-2 tracking-tighter italic">Welcome Back.</h2>
+                <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Access your premium dashboard</p>
             </div>
 
-            {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-6 text-center shadow-inner border border-red-100">{error}</div>}
-            {message && <div className="bg-green-50 text-green-600 p-3 rounded-lg mb-6 text-center shadow-inner border border-green-100">{message}</div>}
+            {error && <div className="bg-red-50 text-red-600 p-4 rounded-2xl mb-8 text-center text-sm font-bold shadow-sm border border-red-100">{error}</div>}
 
             <form onSubmit={handleSubmit} className="space-y-6">
-                {!showOTP ? (
+                {!useOTP ? (
                     <>
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
+                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Email Address</label>
                             <input
                                 type="email"
                                 required
-                                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-gray-700 focus:border-gray-700 transition shadow-sm"
+                                className="w-full px-6 py-4 rounded-2xl border border-gray-100 focus:border-gray-900 focus:ring-0 transition-all bg-gray-50/50 font-bold text-gray-900"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                             />
                         </div>
-                        {!isOTPLogin ? (
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+                        <div>
+                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Password</label>
+                            <input
+                                type="password"
+                                required
+                                className="w-full px-6 py-4 rounded-2xl border border-gray-100 focus:border-gray-900 focus:ring-0 transition-all bg-gray-50/50 font-bold text-gray-900"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                            />
+                        </div>
+                    </>
+                ) : (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        <div>
+                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Email for OTP</label>
+                            <input
+                                type="email"
+                                required
+                                className="w-full px-6 py-4 rounded-2xl border border-gray-100 focus:border-gray-900 focus:ring-0 transition-all bg-gray-50/50 font-bold text-gray-900"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                disabled={showOTPField}
+                            />
+                        </div>
+                        {showOTPField && (
+                            <div className="mt-6">
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 text-center">Verification Code</label>
                                 <input
-                                    type="password"
+                                    type="text"
                                     required
-                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-gray-700 focus:border-gray-700 transition shadow-sm"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="000000"
+                                    className="w-full px-6 py-5 rounded-2xl border border-gray-100 focus:border-gray-900 focus:ring-0 transition-all bg-gray-50/50 font-black tracking-[0.5em] text-center text-2xl shadow-inner"
+                                    value={otp}
+                                    onChange={(e) => setOtp(e.target.value)}
+                                    maxLength="6"
                                 />
                             </div>
-                        ) : (
-                            <div className="bg-gray-50 p-4 rounded-lg text-sm text-gray-600 italic text-center">
                                 You will receive a code on your email to sign in.
                             </div>
                         )}
