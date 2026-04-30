@@ -49,6 +49,27 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const requestLoginOTP = async (email) => {
+        try {
+            const { data } = await api.post('/auth/request-login-otp', { email });
+            return data;
+        } catch (error) {
+            throw error.response?.data?.message || 'Failed to send login OTP';
+        }
+    };
+
+    const loginWithOTP = async (email, otp) => {
+        try {
+            const { data } = await api.post('/auth/login-with-otp', { email, otp });
+            setUser(data);
+            localStorage.setItem('userInfo', JSON.stringify(data));
+            localStorage.setItem('token', data.token);
+            return data;
+        } catch (error) {
+            throw error.response?.data?.message || 'OTP login failed';
+        }
+    };
+
     const logout = () => {
         setUser(null);
         localStorage.removeItem('userInfo');
@@ -56,7 +77,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, register, verifyOTP, logout, loading }}>
+        <AuthContext.Provider value={{ user, login, register, verifyOTP, requestLoginOTP, loginWithOTP, logout, loading }}>
             {!loading && children}
         </AuthContext.Provider>
     );

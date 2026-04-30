@@ -92,3 +92,52 @@ exports.verifyOTP = async (req, res) => {
         res.status(500).json({ message: 'Server Error' });
     }
 };
+
+exports.requestLoginOTP = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        const otp = generateOTP();
+        await OTP.findOneAndDelete({ email, action: 'login' });
+        await OTP.create({ email, otp, action: 'login' });
+        await sendOTPEmail(email, otp, 'login');
+
+        res.json({ message: 'Login OTP sent to your email.' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
+exports.loginWithOTP = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        const validOTP = await OTP.findOne({ email, otp, action: 'login' });
+
+        if (!validOTP) {
+            return res.status(400).json({ message: 'Invalid or expired OTP' });
+        }
+
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        // Ensure user is verified if logging in via OTP
+        if (!user.isVerified) {
+            user.isVerified = true;
+            await user.save();
+        }
+
+        await OTP.deleteOne({ _id: validOTP._id });
+
+        res.json({
+            _id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            token: generateToken(user.id, user.role)
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};

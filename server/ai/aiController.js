@@ -15,7 +15,7 @@ exports.generateDescription = async (req, res) => {
         Keep it concise, between 3 to 5 sentences. Emphasize why someone would want to attend. Output only the description text.`;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-1.5-flash',
             contents: prompt
         });
 
@@ -60,7 +60,7 @@ exports.handleChat = async (req, res) => {
         const prompt = `${systemInstruction}\n\nUser Question: ${message}\nAssistant Answer:`;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-1.5-flash',
             contents: prompt
         });
 
