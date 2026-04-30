@@ -1,14 +1,77 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../utils/axios';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaTicketAlt, FaTimesCircle } from 'react-icons/fa';
+import { FaTicketAlt, FaTimesCircle, FaQrcode, FaDownload, FaCheckCircle } from 'react-icons/fa';
+import { QRCodeCanvas } from 'qrcode.react';
+import { toPng } from 'html-to-image';
+
+const TicketModal = ({ booking, onClose }) => {
+    const ticketRef = useRef(null);
+    if (!booking) return null;
+
+    const handleDownload = async () => {
+        if (ticketRef.current === null) return;
+        const dataUrl = await toPng(ticketRef.current, { cacheBust: true });
+        const link = document.createElement('a');
+        link.download = `ticket-${booking._id}.png`;
+        link.href = dataUrl;
+        link.click();
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+            <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+                <div ref={ticketRef} className="bg-white p-8 flex flex-col items-center">
+                    <div className="flex items-center gap-3 mb-8">
+                        <div className="w-10 h-10 bg-gray-900 text-white rounded-xl flex items-center justify-center shadow-lg">
+                            <FaTicketAlt />
+                        </div>
+                        <span className="text-xl font-black tracking-tighter italic">Eventora.</span>
+                    </div>
+
+                    <div className="w-full bg-gray-50 rounded-[2rem] p-6 mb-8 border border-gray-100 flex flex-col items-center text-center">
+                        <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-6">
+                            <QRCodeCanvas value={booking._id} size={160} level="H" includeMargin={true} />
+                        </div>
+                        <h3 className="text-xl font-black text-gray-900 mb-2 leading-tight">{booking.eventId.title}</h3>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">{booking.eventId.location}</p>
+                        
+                        <div className="w-full border-t border-dashed border-gray-200 pt-4 flex flex-col gap-2">
+                            <div className="flex justify-between text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                <span>Admit One</span>
+                                <span className="text-gray-900">{booking.userId.name}</span>
+                            </div>
+                            <div className="flex justify-between text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                <span>Date</span>
+                                <span className="text-gray-900">{new Date(booking.eventId.date).toLocaleDateString()}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="text-[9px] font-black text-gray-300 uppercase tracking-[0.3em] mb-2">Booking ID</div>
+                    <div className="text-xs font-mono font-bold text-gray-400 bg-gray-50 px-4 py-2 rounded-full mb-4">{booking._id}</div>
+                </div>
+
+                <div className="p-6 bg-gray-50 flex gap-4">
+                    <button onClick={handleDownload} className="flex-1 bg-gray-900 hover:bg-black text-white font-black py-4 rounded-2xl transition flex items-center justify-center gap-2 text-xs uppercase tracking-widest shadow-xl shadow-gray-900/20 active:scale-95">
+                        <FaDownload /> Download
+                    </button>
+                    <button onClick={onClose} className="px-6 py-4 rounded-2xl bg-white border border-gray-100 font-black text-xs uppercase tracking-widest text-gray-400 hover:text-black transition active:scale-95">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const UserDashboard = () => {
     const { user } = useContext(AuthContext);
     const navigate = useNavigate();
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedBooking, setSelectedBooking] = useState(null);
 
     useEffect(() => {
         if (!user) {
@@ -40,10 +103,17 @@ const UserDashboard = () => {
         }
     };
 
-    if (loading) return <div className="text-center py-20 text-xl font-semibold">Loading dashboard...</div>;
+    if (loading) return (
+        <div className="flex flex-col items-center justify-center py-32">
+            <div className="w-16 h-16 border-4 border-gray-100 border-t-black rounded-full animate-spin mb-4"></div>
+            <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Loading Dashboard...</p>
+        </div>
+    );
 
     return (
         <div className="max-w-6xl mx-auto px-4 py-12">
+            <TicketModal booking={selectedBooking} onClose={() => setSelectedBooking(null)} />
+            
             {/* Header Section */}
             <div className="bg-white rounded-[2.5rem] shadow-sm p-8 sm:p-12 mb-12 border border-gray-100 flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-8 hover:shadow-xl transition-all duration-500">
                 <div className="w-24 h-24 bg-gray-900 text-white rounded-[2rem] flex items-center justify-center text-4xl font-black uppercase tracking-tighter shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-500">
@@ -101,6 +171,11 @@ const UserDashboard = () => {
                                                     {booking.paymentStatus.replace('_', ' ')}
                                                 </span>
                                             )}
+                                            {booking.checkedIn && (
+                                                <span className="px-3 py-1 text-[9px] font-black rounded-lg uppercase tracking-widest bg-purple-100 text-purple-700 flex items-center gap-1">
+                                                    <FaCheckCircle /> Checked In
+                                                </span>
+                                            )}
                                         </div>
                                         <div className="space-y-4 text-sm font-bold text-gray-500 uppercase tracking-tight">
                                             <div className="flex justify-between border-b border-gray-50 pb-2">
@@ -120,13 +195,24 @@ const UserDashboard = () => {
                             <div className="p-8 bg-gray-50 flex justify-between items-center shrink-0">
                                 {booking.eventId && booking.status !== 'cancelled' ? (
                                     <>
-                                        <Link to={`/events/${booking.eventId._id}`} className="text-gray-900 font-black text-xs uppercase tracking-widest hover:underline">Details</Link>
-                                        <button
-                                            onClick={() => cancelBooking(booking._id)}
-                                            className="text-red-400 font-black text-xs uppercase tracking-widest hover:text-red-600 transition flex items-center gap-2"
-                                        >
-                                            <FaTimesCircle /> Cancel
-                                        </button>
+                                        {booking.status === 'confirmed' ? (
+                                            <button 
+                                                onClick={() => setSelectedBooking(booking)}
+                                                className="text-gray-900 font-black text-xs uppercase tracking-widest flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition active:scale-95"
+                                            >
+                                                <FaQrcode /> View Ticket
+                                            </button>
+                                        ) : (
+                                            <Link to={`/events/${booking.eventId._id}`} className="text-gray-400 font-black text-xs uppercase tracking-widest hover:text-black transition">Details</Link>
+                                        )}
+                                        {booking.status !== 'confirmed' && (
+                                            <button
+                                                onClick={() => cancelBooking(booking._id)}
+                                                className="text-red-400 font-black text-xs uppercase tracking-widest hover:text-red-600 transition flex items-center gap-2"
+                                            >
+                                                <FaTimesCircle /> Cancel
+                                            </button>
+                                        )}
                                     </>
                                 ) : (
                                     <div className="w-full text-center text-xs font-black text-gray-300 uppercase tracking-[0.2em]">Closed</div>

@@ -122,3 +122,20 @@ exports.cancelBooking = async (req, res) => {
         res.status(500).json({ message: 'Server Error', error: error.message });
     }
 };
+
+exports.checkInBooking = async (req, res) => {
+    try {
+        const booking = await Booking.findById(req.params.id);
+        if (!booking) return res.status(404).json({ message: 'Booking not found' });
+        
+        if (booking.status !== 'confirmed') {
+            return res.status(400).json({ message: 'Only confirmed bookings can be checked in' });
+        }
+
+        booking.checkedIn = true;
+        await booking.save();
+        res.json({ message: 'User checked in successfully!', booking });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
